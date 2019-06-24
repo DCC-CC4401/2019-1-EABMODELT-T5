@@ -67,7 +67,7 @@ def create_evaluators():
     
     names = ["Jocelyn", "Daniela", "María", "Pablo"]
     last_names = ["Simmonds", "Chacón", "Berguer", "Miranda"]
-    is_admin = [False]*3 + [True]
+    is_admin = [True] + [False]*3 
     
     for i in range(len(names)):
         account = Account.objects.create(nombre = names[i], appellido = last_names[i],
@@ -91,17 +91,15 @@ def create_rubric():
 
     rubric =""" 
         [["", "0.", "0.3", "0.5", "0.7", "1.0"],
-        ["A", "B", "C", "D", "E", "F", "G"],
-        ["A", "B", "C", "D", "E", "F", "G"],
-        ["A", "B", "C", "D", "E", "F", "G"],
-        ["A", "B", "C", "D", "E", "F", "G"],
-        ["A", "B", "C", "D", "E", "F", "G"],
-        ["A", "B", "C", "D", "E", "F", "G"]]"""
+        ["A", "B", "C", "D", "E", "F"],
+        ["A", "B", "C", "D", "E", "F"],
+        ["A", "B", "C", "D", "E", "F"],
+        ["A", "B", "C", "D", "E", "F"],
+        ["A", "B", "C", "D", "E", "F"],
+        ["A", "B", "C", "D", "E", "F"]]"""
 
     # rubric = str(rubric)
     r = Rubric.objects.create(name=name, duration_min=duration_min, duration_max=duration_max, state=state, rubric=rubric)
-
-
 
 def create_evaluations(n=1):
     c = Course.objects.get(code='CC4401', year=2019, semester="Otoño")
@@ -112,9 +110,8 @@ def create_evaluations(n=1):
         ev.save()
         evc = Evaluation_Course(evaluation_name=ev, course=c)
         evc.save()
-
-            teams = Team.objects.filter(course=c)
-        for team in teams:
+        teams = Team.objects.filter(course=c)
+        for team in load_teams:
             people = Student.objects.filter(team=team)
             for student in people:
                 eval = Evaluation_Student.objects.create(evaluation_id=ev, student=student, grade=0.0)
