@@ -22,6 +22,13 @@ Detalles de la evaluación - Plataforma de evaluación
 .presentado{
   color:rgb(0, 180, 0);
 }
+
+.abierta{
+  {#color: rgb(186, 0, 255);#}
+  font-weight: bold;
+}
+
+
 tr:nth-child(even) {
         background-color: #FFA07A;
 }
@@ -86,12 +93,14 @@ tr:nth-child(even) {
             <li class="w3-dark-grey w3-xlarge w3-padding-32"> Equipos <i class="fas fa-user-friends"></i></li>
 
             {% for team in ready_teams %}
-            <li class="presentado w3-padding-16">{{team.name}} <i class="far fa-check-circle"></i> <i class="w3-small">ya presentó</i></li>
+            <li class="presentado w3-padding-16">{{team.name}} <i class="far fa-check-circle"></i> <i class="w3-small">ya evaluado</i></li>
             {% endfor %}
-
           </ul>
 
           <ul id="equipos" class="w3-ul w3-light-grey w3-center w3-card-4">
+              {% for team in open_teams %}
+                <li onclick="seleccionar_equipo('{{team.name}}', this);" class=" w3-padding-16 abierta">{{team.name}}   <i class="fa fa-exclamation"></i> <i class="w3-small"> (Pendiente) </i></li>
+              {% endfor %}
 
             {% for team in not_ready_teams %}
               {% if is_admin %}

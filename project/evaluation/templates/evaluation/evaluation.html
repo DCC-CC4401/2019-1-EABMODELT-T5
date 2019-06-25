@@ -106,6 +106,8 @@ Detalles de la evaluación - Plataforma de evaluación
             <div class="form-group">
                 <input type="hidden" name="nota_evaluation" id="nota_evaluation">
                 <input type="hidden" name="evaluator_mail" value="{{request.user.email}}">
+                <input type="hidden" name="nombre_equipo" value="{{team.name}}">
+
                 {% for student in students %}
                 <input type="hidden" name="campo{{forloop.counter}}" value="{{student.id}}">
                 {% endfor %}
@@ -234,6 +236,7 @@ Detalles de la evaluación - Plataforma de evaluación
         var evaluation = document.getElementById("evaluate");
         var divs = evaluation.getElementsByTagName('div');
         var respondido = 0;
+
         for(var i=0; i<divs.length; i++){
             if(divs[i].getAttribute('name') != '0'){
                 respondido++;

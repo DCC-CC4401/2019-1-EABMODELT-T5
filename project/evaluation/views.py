@@ -37,11 +37,11 @@ def evaluation_list(request):
 
         teams = Team.objects.filter(course=course_eval)
 
-        for team in teams:
+        # for team in teams:
             # people = Student.objects.filter(team=team)
             # for student in people:
-            eval = Evaluation_Team.objects.create(evaluation_id=new_eval, team=team, active=False)
-            eval.save()
+            # eval = Evaluation_Team.objects.create(evaluation_id=new_eval, team=team, active=False)
+            # eval.save()
 
     eval = []
     evaluations = Evaluation.objects.all().order_by('init_date')
@@ -179,7 +179,8 @@ def delete_evaluator(request, evaluation_id):
 
 def evaluation_details(request, evaluation_id):
 
-    is_admin = Account.objects.get(correo=request.user.email).is_superuser
+    acc = Account.objects.get(correo=request.user.email)
+    is_admin = acc.is_superuser
 
     evaluation = Evaluation.objects.get(id=evaluation_id)
     eval_course = Evaluation_Course.objects.get(evaluation_name=evaluation)
@@ -201,7 +202,7 @@ def evaluation_details(request, evaluation_id):
     teams = Team.objects.filter(course=course)
     rubric = evaluation.rubric.get_rubric()
 
-    ready = Evaluation_Student.objects.filter(grade__gt=0, evaluation_id=evaluation)
+    ready = Evaluation_Student.objects.filter(grade__gt=0, evaluation_id=evaluation, evaluator=acc)
     ready_teams = []
 
     not_ready_teams = []
@@ -210,10 +211,18 @@ def evaluation_details(request, evaluation_id):
         if team not in ready_teams:
             ready_teams.append(team)
 
+
+    open = Evaluation_Team.objects.filter(evaluation_id=evaluation)
+    open_teams = []
+
+    for t in open:
+        if t.team not in ready_teams:
+            open_teams.append(t.team)
+
     team_members = []
 
     for team in teams:
-        if team not in ready_teams:
+        if team not in ready_teams + open_teams:
             not_ready_teams.append(team)
             students = Student.objects.filter(team=team)
             s = []
@@ -230,11 +239,11 @@ def evaluation_details(request, evaluation_id):
                                                                   'accounts': accounts,
                                                                   'evaluators': accounts_evaluators,
                                                                   'ready_teams': ready_teams,
+                                                                  'open_teams': open_teams,
                                                                   'not_ready_teams': not_ready_teams,
                                                                   'team_members': team_members,
                                                                   'rubric': rubric, 'levels': rubric[0],
                                                                   'rows': rubric[1:]})
-
 
 def evaluate(request, evaluation_id):
 
@@ -265,8 +274,6 @@ def evaluate(request, evaluation_id):
 
         rubric = evaluation.rubric.get_rubric()
 
-
-
         if Account.objects.get(correo=request.user.email).is_superuser:
 
             if Evaluation_Team.objects.filter(evaluation_id=evaluation, team=team).count()==0:
@@ -284,7 +291,8 @@ def evaluate(request, evaluation_id):
 
         context.update({'evaluators': accounts_evaluators,
                         'students': students,
-                        'rubric': rubric})
+                        'rubric': rubric,
+                        'team': team})
 
         return render(request, 'evaluation/evaluation.html', context=context)
 
@@ -302,28 +310,29 @@ def send_eval(request, evaluation_id):
 
     if request.method == "POST":
         nota = request.POST['nota_evaluation']
-        mail = request.POST['evaluator_mail']
-        evaluator = Account.objects.get(correo=mail)
-
+        # mail = request.POST['evaluator_mail']
+        # evaluator = Account.objects.get(correo=mail)
+        evaluator = Account.objects.get(correo=request.user.email)
         evaluation = Evaluation.objects.get(id=evaluation_id)
-
-        cantidad = int(request.POST['cantidad'])
         print(request.POST)
-        for i in range(cantidad):
-            name = 'campo' + str(i+1)
-            student_id = request.POST[name]
-            student = Student.objects.get(id=student_id)
-            new_evaluated = Evaluation_Student_Presented.objects.create(evaluation_id=evaluation, student=student)
-            new_evaluated.save()
 
-        representante = request.POST['campo1']
-        team = Student.objects.get(id=representante).team
+        # cantidad = int(request.POST['cantidad'])
+
+        # for i in range(cantidad):
+        #     name = 'campo' + str(i+1)
+        #     student_id = request.POST[name]
+        #     student = Student.objects.get(id=student_id)
+        #     new_evaluated = Evaluation_Student_Presented.objects.create(evaluation_id=evaluation, student=student)
+        #     new_evaluated.save()
+
+        # representante = request.POST['campo1']
+        team = Team.objects.get(name= request.POST['nombre_equipo'])
 
         members = Student.objects.filter(team=team)
 
         for m in members:
-            eval_student = Evaluation_Student.objects.get(evaluation_id=evaluation, student=m, grade=0.0)
-            eval_student.grade = nota
+            eval_student = Evaluation_Student.objects.create(evaluation_id=evaluation, student=m, evaluator=evaluator, grade=nota)
+            # eval_student.grade =
             eval_student.save()
 
     return redirect('/evaluation/' + evaluation_id + '/')
