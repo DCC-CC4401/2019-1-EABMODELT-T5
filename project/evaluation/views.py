@@ -193,11 +193,22 @@ def evaluation_details(request, evaluation_id):
         students_evaluated.append(e.student)
 
     accounts = Account.objects.filter(~Q(correo=request.user.email))
+
+
     evaluators = Evaluation_Account.objects.filter(evaluation_name=evaluation)
+    not_remove_evaluator = Evaluation_Student.objects.filter(evaluation_id=evaluation).values('evaluator').distinct()
+
+    nrm_ev = []
     accounts_evaluators = []
+    for v in not_remove_evaluator:
+        print(v)
+        nrm_ev.append(Account.objects.get(pk=v['evaluator']))
 
     for v in evaluators:
-        accounts_evaluators.append(v.account)
+        # print(v.acco/)
+        if v.account not in nrm_ev:
+            accounts_evaluators.append(v.account)
+
 
     teams = Team.objects.filter(course=course)
     rubric = evaluation.rubric.get_rubric()
@@ -237,6 +248,7 @@ def evaluation_details(request, evaluation_id):
                                                                   'evaluation': evaluation,
                                                                   'course': course,
                                                                   'accounts': accounts,
+                                                                  'not_remove_evaluator': nrm_ev,
                                                                   'evaluators': accounts_evaluators,
                                                                   'ready_teams': ready_teams,
                                                                   'open_teams': open_teams,
