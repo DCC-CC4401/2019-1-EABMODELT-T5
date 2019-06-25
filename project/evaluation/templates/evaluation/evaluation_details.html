@@ -80,20 +80,33 @@ tr:nth-child(even) {
 
   <div class="w3-row-padding" style="margin-top:30px">
         <div class="w3-half w3-margin-bottom ">
+
           <ul class="w3-ul w3-light-grey w3-center w3-card-4">
+
             <li class="w3-dark-grey w3-xlarge w3-padding-32"> Equipos <i class="fas fa-user-friends"></i></li>
+
             {% for team in ready_teams %}
             <li class="presentado w3-padding-16">{{team.name}} <i class="far fa-check-circle"></i> <i class="w3-small">ya presentó</i></li>
             {% endfor %}
+
           </ul>
-            <ul id="equipos" class="w3-ul w3-light-grey w3-center w3-card-4">
+
+          <ul id="equipos" class="w3-ul w3-light-grey w3-center w3-card-4">
+
             {% for team in not_ready_teams %}
-            <li onclick="show_members('{{forloop.counter}}', {{team_members}}, this)" class="w3-padding-16">{{team.name}}</li>
+              {% if is_admin %}
+                <li onclick="show_members('{{forloop.counter}}', {{team_members}}); seleccionar_equipo('{{team.name}}', this);" class="w3-padding-16">{{team.name}}</li>
+              {% else %}
+                <li onclick="seleccionar_equipo('{{team.name}}', this);" class="w3-padding-16">{{team.name}}</li>
+              {% endif %}
+
             {% endfor %}
+
           </ul>
+
         </div>
 
-      {% if user.is_superuser %}
+      {% if is_admin %}
         <div class="w3-half w3-margin-bottom ">
           <ul class="w3-ul w3-light-grey w3-center w3-card-4">
             <li class="w3-dark-grey w3-xlarge w3-padding-32">Evaluadores <i class="fas fa-chalkboard-teacher"></i></li>
@@ -122,7 +135,6 @@ tr:nth-child(even) {
 
           </ul>
         </div>
-      {% endif %}
   </div>
 
   <div class="w3-row-padding" style="margin-top:30px">
@@ -140,6 +152,7 @@ tr:nth-child(even) {
           </ul>
         </div>
   </div>
+      {% endif %}
 
 
 <div class="w3-modal" id="team_alert">
@@ -153,6 +166,27 @@ tr:nth-child(even) {
         </div>
     </div>
 </div>
+
+
+<div class="w3-modal" id="team_alert2">
+    <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
+        <div class="w3-center">
+            <h4 class="modal-title">Elige Equipo a Evaluar</h4>
+            <span onclick="document.getElementById('team_alert2').style.display='none'" class="w3-button w3-xlarge w3-transparent w3-display-topright" title="Close Modal">×</span>
+            <div class="w3-section">
+                <button class="w3-button w3-block w3-red w3-padding" onclick="document.getElementById('team_alert2').style.display='none'"> Ok </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
 <div class="w3-modal" id="submit">
     <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
         <div class="w3-center">
@@ -162,7 +196,7 @@ tr:nth-child(even) {
                 <form action="evaluate/" method="post" id="evaluar_form">
                 {% csrf_token %}
                 <div class="form-group" id="inputs">
-
+                  <input type="hidden" name="nombre_equipo" id="evaluar_form_equipo"/>
                 </div>
                     <button type="submit" class="w3-button w3-block w3-green w3-padding" >Continuar</button>
                 </form>
@@ -236,31 +270,77 @@ tr:nth-child(even) {
 {% block script %}
 <script>
 
-function verify(){
-    var presentan = document.getElementById('presentan');
-    var lis = presentan.getElementsByTagName('li');
-    if(lis.length > 1){
-        evaluar();
-    }else{
-        document.getElementById('team_alert').style.display='block';
+
+{% if is_admin %}
+  function verify(){
+      let input = document.getElementById('evaluar_form_equipo');
+
+       if(!input.value) {
+           document.getElementById('team_alert2').style.display = 'block';
+       }
+       else {
+           var presentan = document.getElementById('presentan');
+           var lis = presentan.getElementsByTagName('li');
+           if (lis.length > 1) {
+               evaluar();
+           } else {
+               document.getElementById('team_alert').style.display = 'block';
+           }
+       }
+  }
+{% else %}
+    function verify() {
+        let input = document.getElementById('evaluar_form_equipo');
+
+        if(!input.value){
+            document.getElementById('team_alert2').style.display='block';
+
+        }else{
+            document.getElementById('submit').style.display='block';
+        }
     }
+
+
+{% endif %}
+
+function seleccionar_equipo(equipo, element) {
+
+    let f = document.getElementById('evaluar_form_equipo');
+    {##}
+    {#inp.setAttribute("type", 'hidden');#}
+    {#inp.setAttribute("name", 'nombre_equipo');#}
+    f.setAttribute("value", equipo);
+
+    let equipos = document.getElementById('equipos');
+    let lis = equipos.getElementsByTagName('li');
+    for(var i=0; i<lis.length; i++){
+        lis[i].className="w3-padding-16";
+    }
+    element.className = "w3-padding-16 selected";
+
+    {#f.appendChild(inp);#}
 }
+
+
+
 function evaluar(){
-    var f = document.getElementById('evaluar_form');
-    var presentan = document.getElementById('presentan');
-    var lis = presentan.getElementsByTagName('li');
-    var n = 0;
-    for(var i=1; i<lis.length; i++){
+    let f = document.getElementById('evaluar_form');
+    let presentan = document.getElementById('presentan');
+    let lis = presentan.getElementsByTagName('li');
+    let n = 0;
+
+    for(let i=1; i<lis.length; i++){
         n+=1;
-        var inp = document.createElement('input')
+        let inp = document.createElement('input');
         inp.setAttribute("type", 'hidden');
-        inp.setAttribute("name", 'campo' + i);
+        inp.setAttribute("name", 'presentador_' + i);
         inp.setAttribute("value", lis[i].innerHTML);
         f.appendChild(inp);
     }
-    var inp = document.createElement('input')
+
+    let inp = document.createElement('input')
     inp.setAttribute("type", 'hidden');
-    inp.setAttribute("name", 'cantidad');
+    inp.setAttribute("name", 'cantidad_presentadores');
     inp.setAttribute("value", n);
     f.appendChild(inp);
     document.getElementById('submit').style.display='block';
@@ -282,7 +362,7 @@ function evaluar(){
     xhttp.open("POST", '/evaluation/'+id+'/evaluate/', true);
     xhttp.send(data);
 }*/
-function show_members(index, members, element){
+function show_members(index, members){
     var ul = document.getElementById("team_members");
     ul.innerHTML = "<li class='w3-dark-grey w3-xlarge w3-padding-32'> Miembros del Equipo <i class='fas fa-user-friends'></i></li>";
     team = members[index-1]
@@ -301,12 +381,6 @@ function show_members(index, members, element){
         ul.appendChild(li1);
     }
 
-    var equipos = document.getElementById('equipos');
-    var lis = equipos.getElementsByTagName('li');
-    for(var i=0; i<lis.length; i++){
-        lis[i].className="w3-padding-16";
-    }
-    element.className = "w3-padding-16 selected";
 }
 
 function select_student(element){
